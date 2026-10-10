@@ -1,0 +1,1646 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>แดชบอร์ดผลการเทรดบอท</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root{
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+
+    --bg:#F5F3EE;
+    --surface:#FFFFFF;
+    --surface-alt:#EDEAE2;
+    --border:#DBD6CB;
+    --text:#1C1F1B;
+    --text-dim:#6B6F68;
+    --profit:#1F8F68;
+    --profit-soft:rgba(31,143,104,0.12);
+    --loss:#C24634;
+    --loss-soft:rgba(194,70,52,0.12);
+    --accent:#A9782E;
+    --accent-soft:rgba(169,120,46,0.14);
+    --hero-line:rgba(0,0,0,0.08);
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0E141B;
+      --surface:#161E27;
+      --surface-alt:#1C2530;
+      --border:#2B3542;
+      --text:#E9EDF0;
+      --text-dim:#8B98A4;
+      --profit:#3FB489;
+      --profit-soft:rgba(63,180,137,0.14);
+      --loss:#E2705A;
+      --loss-soft:rgba(226,112,90,0.14);
+      --accent:#D9A85C;
+      --accent-soft:rgba(217,168,92,0.16);
+      --hero-line:rgba(255,255,255,0.08);
+    }
+  }
+
+  :root[data-theme="dark"]{
+    --bg:#0E141B;
+    --surface:#161E27;
+    --surface-alt:#1C2530;
+    --border:#2B3542;
+    --text:#E9EDF0;
+    --text-dim:#8B98A4;
+    --profit:#3FB489;
+    --profit-soft:rgba(63,180,137,0.14);
+    --loss:#E2705A;
+    --loss-soft:rgba(226,112,90,0.14);
+    --accent:#D9A85C;
+    --accent-soft:rgba(217,168,92,0.16);
+    --hero-line:rgba(255,255,255,0.08);
+  }
+
+  html{ scroll-padding-top:env(safe-area-inset-top,0px); }
+  *{ box-sizing:border-box; }
+
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Noto Sans Thai', system-ui, sans-serif;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .num{ font-family:'IBM Plex Mono', ui-monospace, monospace; font-feature-settings:"tnum" 1; }
+
+  .wrap{ max-width:960px; margin:0 auto; padding:28px 20px 80px; }
+
+  /* ---------- Header ---------- */
+  .topbar{ display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+  .topbar h1{ font-size:16px; font-weight:600; color:var(--text-dim); margin:0; letter-spacing:0.01em; }
+  .theme-btn{
+    width:36px; height:36px; border-radius:50%;
+    border:1px solid var(--border); background:var(--surface); color:var(--text);
+    cursor:pointer; font-size:16px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .theme-btn:active{ transform:scale(0.92); }
+  .theme-btn:focus-visible, button:focus-visible, input:focus-visible{
+    outline:2px solid var(--accent); outline-offset:2px;
+  }
+
+  /* ---------- Portfolio switcher ---------- */
+  .portfolio-bar{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+  .pill{
+    padding:7px 14px; border-radius:20px; border:1px solid var(--border);
+    background:var(--surface); color:var(--text-dim);
+    font-family:'Noto Sans Thai', sans-serif; font-size:13px; font-weight:600;
+    cursor:pointer; white-space:nowrap;
+  }
+  .pill.active{ background:var(--accent-soft); border-color:var(--accent); color:var(--accent); }
+  .pill-ghost{ background:transparent; border-style:dashed; }
+  .portfolio-add, .portfolio-manage{
+    display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:16px;
+    background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px;
+  }
+  .portfolio-add input, .portfolio-manage input{
+    flex:1 1 200px; padding:8px 10px; border-radius:7px; border:1px solid var(--border);
+    background:var(--surface-alt); color:var(--text); font-family:'Noto Sans Thai', sans-serif; font-size:14px;
+  }
+  .portfolio-add input:focus, .portfolio-manage input:focus{ outline:none; border-color:var(--accent); }
+  .fee-toggle{ display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text-dim); cursor:pointer; white-space:nowrap; }
+  .fee-toggle input{ width:auto; accent-color:var(--accent); cursor:pointer; }
+
+  /* ---------- Hero ---------- */
+  .hero{ padding:24px 0 22px; border-bottom:1px solid var(--hero-line); margin-bottom:22px; }
+  .hero-label{ color:var(--text-dim); font-size:14px; margin-bottom:8px; }
+  .hero-amount{ font-size:42px; font-weight:600; color:var(--accent); letter-spacing:-0.01em; }
+  .hero-unit{ font-size:16px; color:var(--text-dim); margin-left:8px; }
+  .hero-status{
+    display:inline-flex; align-items:center; gap:6px; margin-top:10px;
+    padding:6px 12px; border-radius:20px; font-size:14px; font-weight:600;
+  }
+  .hero-status.up{ background:var(--profit-soft); color:var(--profit); }
+  .hero-status.down{ background:var(--loss-soft); color:var(--loss); }
+  .hero-status.flat{ background:var(--surface-alt); color:var(--text-dim); }
+  .hero-note{ margin-top:10px; font-size:12.5px; color:var(--text-dim); }
+
+  /* ---------- Tiles ---------- */
+  .tiles{ display:grid; grid-template-columns:repeat(auto-fit, minmax(190px,1fr)); gap:12px; margin-bottom:28px; }
+  .tile{ background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:16px 16px 14px; }
+  .tile-label{ font-size:12.5px; color:var(--text-dim); margin-bottom:8px; }
+  .tile-value{ font-size:21px; font-weight:600; }
+  .tile-sub{ margin-top:6px; font-size:12.5px; font-weight:600; }
+  .up{ color:var(--profit); }
+  .down{ color:var(--loss); }
+  .flat{ color:var(--text-dim); }
+
+  section{ margin-bottom:30px; }
+  .section-title{ font-size:15px; font-weight:600; margin:0 0 12px; }
+
+  /* ---------- Calendar ---------- */
+  .cal-card{ background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:16px; }
+  .cal-nav{ display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
+  .cal-nav-btn{
+    width:32px; height:32px; border-radius:8px; border:1px solid var(--border);
+    background:var(--surface-alt); color:var(--text); cursor:pointer; font-size:15px;
+  }
+  .cal-month-label{ font-size:15px; font-weight:600; }
+  .cal-summary{ font-size:12.5px; color:var(--text-dim); margin:6px 0 14px; }
+  .cal-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:5px; }
+  .cal-dow{ text-align:center; font-size:11px; color:var(--text-dim); padding-bottom:4px; }
+  .cal-cell{
+    min-height:56px; border-radius:8px; border:1px solid var(--border);
+    background:var(--surface-alt); padding:5px 6px; cursor:pointer;
+    display:flex; flex-direction:column; justify-content:space-between;
+    font-size:11px;
+  }
+  .cal-cell.empty{ background:transparent; border-color:transparent; cursor:default; }
+  .cal-cell.today{ border-color:var(--accent); }
+  .cal-cell.has-profit{ background:var(--profit-soft); border-color:var(--profit); }
+  .cal-cell.has-loss{ background:var(--loss-soft); border-color:var(--loss); }
+  .cal-cell:hover:not(.empty){ filter:brightness(0.97); }
+  .cal-daynum{ color:var(--text-dim); font-weight:600; }
+  .cal-cell.has-profit .cal-daynum, .cal-cell.has-loss .cal-daynum{ color:var(--text); }
+  .cal-pl{ font-family:'IBM Plex Mono', monospace; font-weight:600; font-size:12px; align-self:flex-end; }
+  .cal-cell.has-profit .cal-pl{ color:var(--profit); }
+  .cal-cell.has-loss .cal-pl{ color:var(--loss); }
+
+  /* ---------- Form ---------- */
+  .form-card{ background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:16px; }
+  .form-grid{ display:grid; grid-template-columns:1.1fr 1fr 1fr 1fr auto; gap:10px; align-items:end; }
+  .field label{ display:block; font-size:12px; color:var(--text-dim); margin-bottom:5px; }
+  .field input{
+    width:100%; padding:9px 10px; border-radius:7px; border:1px solid var(--border);
+    background:var(--surface-alt); color:var(--text); font-family:'IBM Plex Mono', monospace; font-size:14px;
+  }
+  .field input:focus{ outline:none; border-color:var(--accent); }
+  .btn{
+    padding:10px 16px; border-radius:7px; border:1px solid var(--accent); background:var(--accent);
+    color:#1C1108; font-family:'Noto Sans Thai',sans-serif; font-weight:600; font-size:14px; cursor:pointer; white-space:nowrap;
+  }
+  .btn.secondary{ background:transparent; color:var(--text); border-color:var(--border); }
+  .btn:active{ transform:translateY(1px); }
+  .form-hint{ margin-top:10px; font-size:12px; color:var(--text-dim); }
+  .form-error{ margin-top:10px; font-size:12.5px; color:var(--loss); display:none; }
+
+  /* ---------- Day list ---------- */
+  .table-scroll{ overflow-x:auto; }
+  table{ width:100%; border-collapse:collapse; font-size:13.5px; min-width:600px; }
+  th, td{ padding:10px 8px; text-align:right; border-bottom:1px solid var(--border); white-space:nowrap; }
+  th:first-child, td:first-child{ text-align:left; }
+  th{ color:var(--text-dim); font-weight:500; font-size:12px; }
+  td.num, th.num{ font-family:'IBM Plex Mono', monospace; }
+  tbody tr:hover{ background:var(--surface-alt); }
+  .row-actions{ display:flex; gap:6px; justify-content:flex-end; }
+  .icon-btn{
+    border:1px solid var(--border); background:var(--surface); color:var(--text-dim);
+    width:28px; height:28px; border-radius:6px; cursor:pointer; font-size:13px;
+    display:inline-flex; align-items:center; justify-content:center;
+  }
+  .icon-btn.danger:hover{ color:var(--loss); border-color:var(--loss); }
+  .icon-btn.edit:hover{ color:var(--accent); border-color:var(--accent); }
+  .empty-row td{ text-align:center; color:var(--text-dim); padding:22px 8px; }
+
+  canvas#trendChart{ max-height:240px; }
+  .chart-empty{ color:var(--text-dim); font-size:14px; text-align:center; padding:30px 10px; }
+
+  footer{ text-align:center; color:var(--text-dim); font-size:12px; margin-top:10px; }
+
+  /* ---------- Tabs & period bar ---------- */
+  .tabs-wrap{ position:sticky; top:0; z-index:20; background:var(--bg); padding:6px 0 10px; }
+  .tabs{ display:flex; gap:4px; padding:4px; background:var(--surface-alt); border-radius:12px; }
+  .tab{
+    flex:1 1 0; border:0; background:transparent; color:var(--text-dim); cursor:pointer;
+    padding:10px 12px; border-radius:9px; font-family:'Noto Sans Thai',sans-serif; font-size:14px; font-weight:600;
+  }
+  .tab.on{ background:var(--surface); color:var(--text); box-shadow:0 1px 3px rgba(0,0,0,.12); }
+  .period-bar{ display:flex; align-items:center; gap:8px; margin:4px 0 16px; }
+  .period-label{ min-width:140px; text-align:center; font-size:15px; font-weight:600; }
+  .period-today{
+    margin-left:auto; border:1px solid var(--border); background:transparent; color:var(--text-dim);
+    border-radius:16px; padding:5px 12px; font-size:12px; font-weight:600; cursor:pointer;
+    font-family:'Noto Sans Thai',sans-serif;
+  }
+  .period-today:hover{ color:var(--accent); border-color:var(--accent); }
+  .view[hidden]{ display:none; }
+  .hero-cta{ margin-top:14px; }
+  .fold{ background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:0 16px; }
+  .fold > summary{
+    cursor:pointer; padding:14px 0; font-size:15px; font-weight:600; list-style:none;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .fold > summary::-webkit-details-marker{ display:none; }
+  .fold > summary::after{ content:"▾"; color:var(--text-dim); transition:transform .2s ease; }
+  .fold[open] > summary::after{ transform:rotate(180deg); }
+  .fold > .form-card{ border:0; padding:0 0 14px; background:transparent; }
+  .fold > #importChoice.form-card{ background:var(--surface-alt); padding:12px; border-radius:8px; margin-bottom:14px; }
+  @media (max-width:380px){ .period-label{ min-width:0; flex:1; } }
+
+  /* ---------- Goals ---------- */
+  .goals-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(290px,1fr)); gap:14px; }
+  .goal-card{
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    padding:16px 16px 14px; display:flex; flex-direction:column; gap:10px;
+    transition:border-color .3s ease;
+  }
+  .goal-card.achieved{ border-color:var(--profit); }
+  .goal-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .goal-title{ font-size:14px; font-weight:600; }
+  .goal-edit-btn{
+    border:1px solid var(--border); background:var(--surface-alt); color:var(--text-dim);
+    border-radius:16px; padding:4px 11px; font-size:12px; cursor:pointer;
+    font-family:'Noto Sans Thai',sans-serif; font-weight:600;
+  }
+  .goal-edit-btn:hover{ color:var(--accent); border-color:var(--accent); }
+  .goal-form{
+    display:none; gap:8px; align-items:center; flex-wrap:wrap;
+    background:var(--surface-alt); border-radius:8px; padding:10px;
+  }
+  .goal-form.open{ display:flex; }
+  .goal-seg{ display:inline-flex; border:1px solid var(--border); border-radius:7px; overflow:hidden; }
+  .goal-seg button{
+    border:0; background:var(--surface); color:var(--text-dim); padding:7px 12px; cursor:pointer;
+    font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600;
+  }
+  .goal-seg button.on{ background:var(--accent); color:#1C1108; }
+  .goal-form input[type="number"]{
+    flex:1 1 90px; min-width:80px; padding:8px 10px; border-radius:7px; border:1px solid var(--border);
+    background:var(--surface); color:var(--text); font-family:'IBM Plex Mono',monospace; font-size:14px;
+  }
+  .goal-form input[type="number"]:focus{ outline:none; border-color:var(--accent); }
+  .goal-form .btn{ padding:8px 12px; font-size:13px; }
+  .goal-form-error{ flex-basis:100%; font-size:12px; color:var(--loss); display:none; }
+
+  .goal-body{ display:flex; align-items:center; gap:16px; }
+  .goal-ring-wrap{ position:relative; flex:0 0 150px; width:150px; height:150px; }
+  .goal-ring{ width:100%; height:100%; display:block; overflow:visible; }
+  .ring-track{ fill:none; stroke:var(--surface-alt); stroke-width:11; }
+  .ring-arc{
+    fill:none; stroke:var(--accent); stroke-width:11; stroke-linecap:round;
+    transition:stroke-dashoffset 1.2s cubic-bezier(.22,.8,.3,1), stroke .4s ease;
+  }
+  .goal-card.achieved .ring-arc{ stroke:var(--profit); }
+  .ring-dot{ fill:var(--border); transition:fill .4s ease; }
+  .ring-dot.lit{ fill:var(--surface); }
+  .goal-card.zero .ring-arc{ opacity:0; }
+  .orbit{ transform-origin:70px 70px; transition:transform 1.2s cubic-bezier(.22,.8,.3,1); }
+  .rocket-glow{ fill:var(--accent-soft); }
+  .goal-card.achieved .rocket-glow{ fill:var(--profit-soft); }
+  .rocket-body{ fill:var(--surface); stroke:var(--accent); stroke-width:1.5; stroke-linejoin:round; }
+  .rocket-fin, .rocket-window{ fill:var(--accent); }
+  .goal-card.achieved .rocket-body{ stroke:var(--profit); }
+  .goal-card.achieved .rocket-fin, .goal-card.achieved .rocket-window{ fill:var(--profit); }
+  .rocket-flame{ fill:#F2A33A; transform-box:fill-box; transform-origin:50% 0%; animation:flame .35s ease-in-out infinite alternate; }
+  .goal-card.empty .rocket-flame{ animation:none; opacity:.0; }
+  .rocket-bob{ animation:thrust 1.4s ease-in-out infinite; }
+  .spark{ fill:var(--profit); opacity:0; transform-box:fill-box; transform-origin:center; }
+  .goal-card.achieved .spark{ animation:twinkle 1.6s ease-in-out infinite; }
+  @keyframes flame{ from{ transform:scaleY(.7); } to{ transform:scaleY(1.25); } }
+  @keyframes thrust{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(1.6px); } }
+  @keyframes twinkle{ 0%,100%{ opacity:0; transform:scale(.4); } 50%{ opacity:1; transform:scale(1); } }
+
+  .ring-center{
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    pointer-events:none; text-align:center;
+  }
+  .ring-pct{ font-size:30px; font-weight:700; line-height:1.1; }
+  .ring-sub{ font-size:11.5px; color:var(--text-dim); margin-top:2px; }
+
+  .goal-stats{ flex:1; min-width:0; display:flex; flex-direction:column; gap:9px; }
+  .goal-stat-label{ font-size:11.5px; color:var(--text-dim); }
+  .goal-stat-value{ font-size:17px; font-weight:600; line-height:1.25; }
+  .goal-stat-value small{ font-size:12px; font-weight:500; color:var(--text-dim); }
+  .goal-need{
+    font-size:12.5px; color:var(--text); background:var(--surface-alt);
+    border-radius:8px; padding:8px 10px; line-height:1.45;
+  }
+  .goal-pace{ font-size:12px; font-weight:600; }
+  .goal-msg{
+    font-size:13px; font-weight:600; padding:10px 12px; border-radius:8px;
+    background:var(--accent-soft); color:var(--text); line-height:1.45;
+  }
+  .goal-card.achieved .goal-msg{ background:var(--profit-soft); }
+  .goal-note{ margin-top:10px; font-size:12px; color:var(--text-dim); }
+
+  @media (max-width:420px){
+    .goal-body{ flex-direction:column; align-items:stretch; }
+    .goal-ring-wrap{ align-self:center; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .ring-arc, .orbit{ transition:none; }
+    .rocket-flame, .rocket-bob, .spark{ animation:none !important; }
+    .goal-card.achieved .spark{ opacity:1; }
+  }
+
+  @media (max-width:640px){
+    .hero-amount{ font-size:32px; }
+    .form-grid{ grid-template-columns:1fr 1fr; }
+    .form-grid .btn-cell{ grid-column:1 / -1; }
+    .cal-cell{ min-height:46px; font-size:10px; }
+    .cal-pl{ font-size:10px; }
+    th, td{ font-size:12.5px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <h1>ผลการเทรดบอท · รายวัน</h1>
+    <button class="theme-btn" id="themeToggle" title="สลับโหมดสี" aria-label="สลับโหมดสี">🌗</button>
+  </div>
+
+  <div class="portfolio-bar" id="portfolioBar"></div>
+  <div class="portfolio-add" id="portfolioAdd" style="display:none;">
+    <input type="text" id="newPortfolioName" placeholder="ชื่อพอร์ต เช่น Binance หลัก, Bybit รอง">
+    <label class="fee-toggle"><input type="checkbox" id="newPortfolioFee" checked> คิดค่าธรรมเนียมบอท 20%</label>
+    <button class="btn" id="portfolioAddConfirm">เพิ่มพอร์ต</button>
+    <button class="btn secondary" id="portfolioAddCancel">ยกเลิก</button>
+  </div>
+  <div class="portfolio-manage" id="portfolioManage" style="display:none;">
+    <input type="text" id="renamePortfolioInput" placeholder="ชื่อพอร์ต">
+    <label class="fee-toggle"><input type="checkbox" id="renamePortfolioFee"> คิดค่าธรรมเนียมบอท 20%</label>
+    <button class="btn secondary" id="portfolioRenameBtn">บันทึกการตั้งค่า</button>
+    <button class="icon-btn danger" id="portfolioDeleteBtn" title="ลบพอร์ตนี้" aria-label="ลบพอร์ตนี้">🗑</button>
+    <button class="btn secondary" id="portfolioManageCancel">ปิด</button>
+  </div>
+
+  <div id="tabsAnchor"></div>
+  <div class="tabs-wrap">
+    <nav class="tabs" id="tabs" role="tablist" aria-label="เมนูหลัก">
+      <button type="button" class="tab on" role="tab" id="tab-overview" data-tab="overview" aria-selected="true" aria-controls="view-overview">📊 ภาพรวม</button>
+      <button type="button" class="tab" role="tab" id="tab-daily" data-tab="daily" aria-selected="false" aria-controls="view-daily">📅 บันทึกรายวัน</button>
+    </nav>
+  </div>
+
+  <div class="period-bar">
+    <button class="cal-nav-btn" id="calPrev" aria-label="เดือนก่อนหน้า">‹</button>
+    <div class="period-label" id="calMonthLabel">-</div>
+    <button class="cal-nav-btn" id="calNext" aria-label="เดือนถัดไป">›</button>
+    <button type="button" class="period-today" id="calToday">เดือนนี้</button>
+  </div>
+
+  <div class="view" id="view-overview" role="tabpanel" aria-labelledby="tab-overview">
+
+  <div class="hero">
+    <div class="hero-label">มูลค่าพอร์ตปัจจุบัน (ยอดจริงในแอพเทรด)</div>
+    <div><span class="hero-amount num" id="heroValue">0.00</span><span class="hero-unit">USDT</span></div>
+    <div class="hero-status flat" id="heroStatus">ยังไม่มีข้อมูล</div>
+    <div class="hero-note" id="heroNote"></div>
+    <button class="btn hero-cta" id="quickAddBtn" type="button">+ บันทึกวันนี้</button>
+  </div>
+
+  <div class="tiles">
+    <div class="tile">
+      <div class="tile-label">ต้นทุนจริงทั้งหมด (เงินทุน + ค่าธรรมเนียม)</div>
+      <div class="tile-value num" id="tileCost">0.00</div>
+      <div class="tile-sub flat" id="tileCostSub">ยังไม่มีข้อมูล</div>
+    </div>
+    <div class="tile">
+      <div class="tile-label" id="tileMonthLabel">กำไร/ขาดทุนเดือนนี้ (สุทธิ)</div>
+      <div class="tile-value num" id="tileMonthProfit">0.00</div>
+      <div class="tile-sub num flat" id="tileMonthPercent">0.00%</div>
+    </div>
+    <div class="tile">
+      <div class="tile-label">กำไร/ขาดทุนสะสมตลอดการเทรด (รวมที่ถอนไปแล้ว)</div>
+      <div class="tile-value num" id="tileCumProfit">0.00</div>
+      <div class="tile-sub num flat" id="tileCumPercent">0.00%</div>
+    </div>
+  </div>
+
+  <section>
+    <div class="section-title">🎯 เป้าหมายกำไร</div>
+    <div class="goals-grid" id="goalsGrid"></div>
+    <div class="goal-note">นับจากกำไรสุทธิหลังหักค่าธรรมเนียมแล้ว · ตามเดือน/ปีที่เลือกไว้ด้านบน · เป้าหมายเป็นแค่ตัวชี้วัด อย่าเพิ่มความเสี่ยงเพื่อไล่ให้ทันนะครับ</div>
+  </section>
+
+  <section>
+    <div class="section-title">แนวโน้มรายเดือน</div>
+    <div class="cal-card">
+      <canvas id="trendChart" height="110"></canvas>
+      <div class="chart-empty" id="chartEmpty" style="display:none;">เพิ่มข้อมูลอย่างน้อย 1 วันเพื่อดูกราฟ</div>
+    </div>
+  </section>
+
+  <section>
+    <details class="fold">
+      <summary>💾 สำรอง / นำเข้าข้อมูล</summary>
+    <div class="form-card" style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
+      <button class="btn secondary" id="exportBtn">ดาวน์โหลดไฟล์ข้อมูล (.json)</button>
+      <button class="btn secondary" id="importBtn">นำเข้าไฟล์ข้อมูล</button>
+      <input type="file" id="importFile" accept="application/json,.json" style="display:none;">
+      <span class="form-hint" id="backupMsg" style="margin:0;">สำรองเฉพาะพอร์ตที่เลือกอยู่ตอนนี้</span>
+    </div>
+    <div class="form-card" id="importChoice" style="display:none; margin-top:10px;">
+      <div class="form-hint" style="margin:0 0 10px;">พบข้อมูล <span id="importCount">0</span> วันในไฟล์ที่เลือก ต้องการทำอย่างไร</div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="btn" id="importReplaceBtn">แทนที่ข้อมูลทั้งหมด</button>
+        <button class="btn secondary" id="importMergeBtn">รวมกับข้อมูลเดิม (ข้ามวันที่ซ้ำ)</button>
+        <button class="btn secondary" id="importCancelBtn">ยกเลิก</button>
+      </div>
+    </div>
+    </details>
+  </section>
+  </div>
+
+  <div class="view" id="view-daily" role="tabpanel" aria-labelledby="tab-daily" hidden>
+
+  <section>
+    <div class="section-title">ปฏิทินรายวัน</div>
+    <div class="cal-card">
+      <div class="cal-summary" id="calSummary"></div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-title" id="formTitle">เพิ่ม/แก้ไขข้อมูลรายวัน</div>
+    <div class="form-card">
+      <div class="form-grid">
+        <div class="field">
+          <label for="inDate">วันที่</label>
+          <input type="date" id="inDate">
+        </div>
+        <div class="field">
+          <label for="inProfit">กำไร/ขาดทุน (USDT)</label>
+          <input type="number" step="0.01" id="inProfit" placeholder="ใส่ค่าลบถ้าขาดทุน">
+        </div>
+        <div class="field">
+          <label for="inCapital">เงินทุนที่เพิ่ม</label>
+          <input type="number" step="0.01" id="inCapital" placeholder="0 ถ้าไม่มี">
+        </div>
+        <div class="field">
+          <label for="inWithdraw">ถอนเงิน</label>
+          <input type="number" step="0.01" id="inWithdraw" placeholder="0 ถ้าไม่มี">
+        </div>
+        <div class="btn-cell" style="display:flex; gap:8px;">
+          <button class="btn" id="saveBtn">บันทึก</button>
+          <button class="btn secondary" id="deleteEntryBtn" style="display:none;">ลบวันนี้</button>
+        </div>
+      </div>
+      <div class="form-error" id="formError"></div>
+      <div class="form-hint" id="feeStatusHint"></div>
+      <div class="form-hint">กดวันที่ในปฏิทินด้านบนเพื่อเพิ่ม/แก้ไขข้อมูลวันนั้นโดยตรง หรือเลือกวันที่เองในฟอร์มนี้ · หนึ่งวันมีได้ 1 รายการ (บันทึกซ้ำวันเดิม = แก้ไขของเดิม) · ค่าธรรมเนียม 20% และกำไรสุทธิคำนวณให้อัตโนมัติ</div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-title">รายการของเดือนที่กำลังดู</div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>วันที่</th>
+            <th class="num">กำไร/ขาดทุน</th>
+            <th class="num">ค่าธรรมเนียม</th>
+            <th class="num">สุทธิ</th>
+            <th class="num">เงินทุนเพิ่ม</th>
+            <th class="num">ถอนเงิน</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr class="empty-row"><td colspan="7">ยังไม่มีรายการในเดือนนี้</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  </div>
+
+  <footer>ข้อมูลถูกบันทึกไว้ในเบราว์เซอร์นี้เท่านั้น — แนะนำให้ดาวน์โหลดไฟล์สำรองเก็บไว้เป็นระยะ</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var STORAGE_KEY = "trading_dashboard_portfolios_v2";
+  var LEGACY_V1_KEY = "trading_dashboard_portfolios_v1";
+  var LEGACY_FLAT_KEY = "trading_dashboard_records_v1";
+  var THEME_KEY = "trading_dashboard_theme";
+  var state = null;
+  var entries = [];
+  var viewedMonth = ""; // "YYYY-MM"
+  var chart = null;
+
+  function safeGet(key){ try { return localStorage.getItem(key); } catch(e){ return null; } }
+  function safeSet(key, val){ try { localStorage.setItem(key, val); } catch(e){ /* ignore */ } }
+  function genId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+  function pad2(n){ return String(n).padStart(2,"0"); }
+  function todayISO(){ var d=new Date(); return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate()); }
+
+  function getActive(){
+    var p = state.portfolios.find(function(x){ return x.id === state.activeId; });
+    return p || state.portfolios[0];
+  }
+  function isFeeEnabled(p){ return p.feeEnabled !== false; }
+
+  // ---- migration ----
+  function monthlyRecordsToEntries(records){
+    return (records || []).map(function(r){
+      return {
+        id: r.id || genId(),
+        date: (r.month || "1970-01") + "-01",
+        profit: Number(r.profit) || 0,
+        capitalAdded: Number(r.capital) || 0,
+        withdraw: Number(r.withdraw) || 0
+      };
+    });
+  }
+
+  function loadState(){
+    var raw = safeGet(STORAGE_KEY);
+    if(raw){
+      try {
+        var parsed = JSON.parse(raw);
+        if(parsed && Array.isArray(parsed.portfolios) && parsed.portfolios.length){
+          if(!parsed.activeId || !parsed.portfolios.some(function(p){ return p.id === parsed.activeId; })){
+            parsed.activeId = parsed.portfolios[0].id;
+          }
+          parsed.portfolios.forEach(function(p){ if(!Array.isArray(p.entries)) p.entries = []; if(!p.goals || typeof p.goals !== 'object') p.goals = { monthly:null, yearly:null }; });
+          return parsed;
+        }
+      } catch(e){ /* fall through */ }
+    }
+
+    // migrate from v1 multi-portfolio (monthly records)
+    var v1raw = safeGet(LEGACY_V1_KEY);
+    if(v1raw){
+      try {
+        var v1 = JSON.parse(v1raw);
+        if(v1 && Array.isArray(v1.portfolios) && v1.portfolios.length){
+          var migrated = {
+            portfolios: v1.portfolios.map(function(p){
+              return {
+                id: p.id || genId(),
+                name: p.name || "พอร์ต 1",
+                feeEnabled: p.feeEnabled !== false,
+                goals: { monthly:null, yearly:null },
+                entries: monthlyRecordsToEntries(p.records)
+              };
+            }),
+            activeId: v1.activeId
+          };
+          if(!migrated.activeId || !migrated.portfolios.some(function(p){ return p.id === migrated.activeId; })){
+            migrated.activeId = migrated.portfolios[0].id;
+          }
+          return migrated;
+        }
+      } catch(e){ /* fall through */ }
+    }
+
+    // migrate from oldest flat single-portfolio records
+    var flatRaw = safeGet(LEGACY_FLAT_KEY);
+    var flatEntries = [];
+    if(flatRaw){
+      try {
+        var flatParsed = JSON.parse(flatRaw);
+        if(Array.isArray(flatParsed)) flatEntries = monthlyRecordsToEntries(flatParsed);
+      } catch(e){ /* ignore */ }
+    }
+    var firstPortfolio = { id: genId(), name: "พอร์ต 1", feeEnabled: true, goals: { monthly:null, yearly:null }, entries: flatEntries };
+    return { portfolios: [firstPortfolio], activeId: firstPortfolio.id };
+  }
+
+  function saveEntries(){
+    getActive().entries = entries;
+    safeSet(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  function fmt(n, decimals){
+    decimals = decimals === undefined ? 2 : decimals;
+    var v = Number(n) || 0;
+    var sign = v < 0 ? "-" : "";
+    var abs = Math.abs(v).toFixed(decimals);
+    var parts = abs.split(".");
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return sign + parts.join(".");
+  }
+
+  var MONTH_NAMES = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+  var MONTH_SHORT = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+  function monthLabelLong(m){
+    var parts = m.split("-"); var idx = parseInt(parts[1],10)-1;
+    return (MONTH_NAMES[idx] || parts[1]) + " " + parts[0];
+  }
+  function monthLabelShort(m){
+    var parts = m.split("-"); var idx = parseInt(parts[1],10)-1;
+    return (MONTH_SHORT[idx] || parts[1]) + " " + parts[0];
+  }
+
+  function trendClass(v){ return v > 0 ? "up" : (v < 0 ? "down" : "flat"); }
+  function setClass(el, cls){ el.classList.remove("up","down","flat"); el.classList.add(cls); }
+
+  // ---- core computation across the whole portfolio history ----
+  // Fee is paid from a SEPARATE wallet, not deducted from the trading
+  // account itself — so it never reduces the raw trading balance, only
+  // the user's true economic profit/loss.
+  //
+  // Withdrawals are assumed to come out of PROFIT, never out of the
+  // principal — the capital/cost-basis figure never shrinks just
+  // because money was taken out. Example: deposit 400, profit 200
+  // (account now worth 600), withdraw 200 → capital is still 400, the
+  // account now holds exactly 400 again (break-even), and the 200
+  // profit you already pocketed still counts toward lifetime profit.
+  function computeAll(){
+    var feeEnabled = isFeeEnabled(getActive());
+    var sorted = entries.slice().sort(function(a,b){ return a.date.localeCompare(b.date); });
+    var totalCapital = 0, cumGross = 0, cumFee = 0, cumNetProfit = 0, cumWithdraw = 0;
+    var perDay = [];
+    sorted.forEach(function(e){
+      var capitalAdded = Number(e.capitalAdded) || 0;
+      var profit = Number(e.profit) || 0;
+      var withdraw = Number(e.withdraw) || 0;
+      var fee = (profit > 0 && feeEnabled) ? profit * 0.2 : 0;
+      var netProfit = profit - fee;
+
+      totalCapital += capitalAdded; // deposits only — withdrawals never touch this
+      cumGross += profit;
+      cumFee += fee;
+      cumNetProfit += netProfit;
+      cumWithdraw += withdraw;
+
+      var rawEquityToDate = totalCapital + cumGross - cumWithdraw; // actual balance in the trading app
+      var trueCostToDate = totalCapital + cumFee; // cost basis: capital put in + fees paid, unaffected by withdrawals
+
+      perDay.push({
+        id: e.id, date: e.date, profit: profit, capitalAdded: capitalAdded, withdraw: withdraw,
+        fee: fee, netProfit: netProfit,
+        totalCapitalToDate: totalCapital, cumNetProfitToDate: cumNetProfit, cumFeeToDate: cumFee,
+        cumWithdrawToDate: cumWithdraw, rawEquityToDate: rawEquityToDate, trueCostToDate: trueCostToDate,
+        accountDiffToDate: rawEquityToDate - trueCostToDate
+      });
+    });
+    var rawEquity = totalCapital + cumGross - cumWithdraw;
+    var trueCost = totalCapital + cumFee;
+    return {
+      perDay: perDay,
+      totals: {
+        totalCapital: totalCapital, cumGross: cumGross, cumFee: cumFee, cumNetProfit: cumNetProfit,
+        cumWithdraw: cumWithdraw, rawEquity: rawEquity, trueCost: trueCost, accountDiff: rawEquity - trueCost
+      }
+    };
+  }
+
+  function monthlySummary(perDay){
+    var order = [], map = {};
+    perDay.forEach(function(d){
+      var m = d.date.slice(0,7);
+      if(!map[m]){ map[m] = { month:m, profit:0, fee:0, netProfit:0, capitalAdded:0, withdraw:0, last:null }; order.push(m); }
+      var mm = map[m];
+      mm.profit += d.profit; mm.fee += d.fee; mm.netProfit += d.netProfit;
+      mm.capitalAdded += d.capitalAdded; mm.withdraw += d.withdraw;
+      mm.last = d;
+    });
+    return order.map(function(m){
+      var mm = map[m];
+      var startCapital = mm.last.totalCapitalToDate - mm.capitalAdded; // capital never moves from withdrawals
+      var monthPercent = startCapital !== 0 ? (mm.netProfit / startCapital) * 100 : 0;
+      return {
+        month: mm.month, profit: mm.profit, fee: mm.fee, netProfit: mm.netProfit,
+        capitalAdded: mm.capitalAdded, withdraw: mm.withdraw, monthPercent: monthPercent,
+        totalCapitalToDate: mm.last.totalCapitalToDate, cumNetProfitToDate: mm.last.cumNetProfitToDate,
+        rawEquityToDate: mm.last.rawEquityToDate, trueCostToDate: mm.last.trueCostToDate
+      };
+    });
+  }
+
+  // ================= GOALS =================
+  // Each portfolio stores up to two targets: monthly and yearly.
+  // A target is { mode: "usdt" | "percent", value: number }.
+  // Progress is measured with NET profit (after the bot fee) for the period
+  // currently shown in the calendar. A "percent" target is a percent of the
+  // capital that had been deposited by the end of that period.
+  var RING_R = 54;
+  var RING_C = 2 * Math.PI * RING_R;
+  var goalsPainted = false;
+
+  function goalsOf(){
+    var p = getActive();
+    if(!p.goals || typeof p.goals !== "object") p.goals = { monthly:null, yearly:null };
+    return p.goals;
+  }
+
+  function daysInMonthOf(y, m){ return new Date(y, m, 0).getDate(); } // m = 1..12
+  function dayOfYearOf(y, m, d){ return Math.round((new Date(y, m-1, d) - new Date(y, 0, 1)) / 86400000) + 1; }
+
+  function computeGoal(kind, perDay){
+    var goal = goalsOf()[kind] || null;
+    var y = parseInt(viewedMonth.slice(0,4), 10);
+    var mo = parseInt(viewedMonth.slice(5,7), 10);
+    var periodKey, start, end, totalDays;
+    if(kind === "monthly"){
+      periodKey = viewedMonth;
+      totalDays = daysInMonthOf(y, mo);
+      start = viewedMonth + "-01";
+      end = viewedMonth + "-" + pad2(totalDays);
+    } else {
+      periodKey = String(y);
+      totalDays = dayOfYearOf(y, 12, 31);
+      start = y + "-01-01";
+      end = y + "-12-31";
+    }
+    var today = todayISO();
+    var profit = 0, hasToday = false, baseCapital = 0;
+    perDay.forEach(function(d){
+      if(d.date.indexOf(periodKey) === 0){
+        profit += d.netProfit;
+        if(d.date === today) hasToday = true;
+      }
+      if(d.date <= end) baseCapital = d.totalCapitalToDate; // perDay is sorted ascending
+    });
+    var status = today > end ? "past" : (today < start ? "future" : "current");
+    var r = { kind:kind, goal:goal, hasGoal:!!goal, profit:profit, baseCapital:baseCapital, status:status, totalDays:totalDays };
+    if(!goal) return r;
+
+    var target = null;
+    if(goal.mode === "percent"){ if(baseCapital > 0) target = goal.value / 100 * baseCapital; }
+    else target = goal.value;
+    if(target === null || !(target > 0)){ r.unresolved = true; return r; }
+
+    r.target = target;
+    r.targetPct = baseCapital > 0 ? target / baseCapital * 100 : null;
+    r.remaining = Math.max(0, target - profit);
+    r.remainingPct = baseCapital > 0 ? r.remaining / baseCapital * 100 : null;
+    r.rawProgress = profit / target;
+    r.progress = Math.max(0, Math.min(1, r.rawProgress));
+    r.achieved = profit >= target;
+    r.over = Math.max(0, profit - target);
+
+    if(status === "current"){
+      var todayMonth = parseInt(today.slice(5,7), 10), todayDay = parseInt(today.slice(8,10), 10);
+      var elapsed = kind === "monthly" ? todayDay : dayOfYearOf(y, todayMonth, todayDay);
+      var completed = elapsed - (hasToday ? 0 : 1);     // days already "done" (today counts once it has an entry)
+      r.daysLeft = totalDays - completed;
+      r.perDay = r.daysLeft > 0 ? r.remaining / r.daysLeft : null;
+      if(kind === "yearly"){
+        r.monthsLeft = 12 - todayMonth + 1;
+        r.perMonth = r.remaining / r.monthsLeft;
+      }
+      if(completed > 0) r.expected = target * completed / totalDays; // where a steady pace would be by now
+    }
+    return r;
+  }
+
+  function goalMessage(r){
+    if(!r.hasGoal) return "ตั้งเป้าหมายก่อนนะ จรวดจะได้มีจุดหมายปลายทาง 🚀";
+    if(r.unresolved) return r.goal.mode === "percent"
+      ? "ต้องมีเงินทุนในพอร์ตก่อน ถึงจะคำนวณเป้าหมายเป็น % ได้ครับ"
+      : "ตั้งเป้าหมายให้มากกว่า 0 ก่อนนะครับ";
+    var label = r.kind === "monthly" ? "เดือน" : "ปี";
+    if(r.achieved) return r.over > 0
+      ? "🎉 บรรลุเป้าหมายแล้ว! เกินเป้าไป +" + fmt(r.over) + " USDT เก่งมาก"
+      : "🎉 บรรลุเป้าหมายพอดี! เยี่ยมไปเลย";
+    if(r.status === "future") return "ยังไม่ถึงช่วงนี้ — จรวดกำลังเติมเชื้อเพลิงรอออกตัว ⛽";
+    if(r.status === "past") return "จบ" + label + "นี้แล้ว ทำได้ " + Math.max(0, Math.round(r.rawProgress * 100)) + "% ของเป้า — เก็บเป็นบทเรียนแล้วไปลุยรอบหน้าต่อ 💪";
+    if(r.profit < 0) return "ตอนนี้ยังติดลบอยู่ ไม่เป็นไร ค่อยๆ ไถ่คืนทีละวัน ใจเย็นๆ ไม่ต้องรีบ 🌱";
+    var p = r.rawProgress;
+    if(p < 0.25) return "ออกตัวแล้ว! ก้าวเล็กๆ ที่สม่ำเสมอพาไปถึงเป้าได้ 🚀";
+    if(p < 0.5) return "ผ่านหนึ่งในสี่แล้ว รักษาจังหวะนี้ไว้ 🔥";
+    if(p < 0.75) return "ผ่านครึ่งทางแล้ว! อีกไม่ไกลเกินเอื้อม ✨";
+    return "ใกล้ถึงแล้ว! อีกนิดเดียวเท่านั้น 🏁";
+  }
+
+  function goalCardHTML(kind){
+    var dots = [0.25, 0.5, 0.75].map(function(f){
+      var a = (-90 + 360 * f) * Math.PI / 180;
+      return '<circle class="ring-dot" data-f="' + f + '" cx="' + (70 + RING_R * Math.cos(a)).toFixed(2) + '" cy="' + (70 + RING_R * Math.sin(a)).toFixed(2) + '" r="2.6"/>';
+    }).join("");
+    var starPath = "M0 -5 L1.3 -1.3 L5 0 L1.3 1.3 L0 5 L-1.3 1.3 L-5 0 L-1.3 -1.3 Z";
+    var sparks = [[16,24,"0s"],[126,18,".4s"],[132,114,".8s"],[10,122,"1.2s"]].map(function(s){
+      return '<g transform="translate(' + s[0] + ',' + s[1] + ')"><path class="spark" d="' + starPath + '" style="animation-delay:' + s[2] + '"/></g>';
+    }).join("");
+    return '' +
+    '<div class="goal-card empty zero" data-kind="' + kind + '" data-mode="usdt">' +
+      '<div class="goal-head">' +
+        '<div class="goal-title" data-role="title"></div>' +
+        '<button class="goal-edit-btn" data-action="edit" data-role="editbtn">+ ตั้งเป้า</button>' +
+      '</div>' +
+      '<div class="goal-form">' +
+        '<div class="goal-seg">' +
+          '<button type="button" class="on" data-action="mode" data-mode="usdt">USDT</button>' +
+          '<button type="button" data-action="mode" data-mode="percent">%</button>' +
+        '</div>' +
+        '<input type="number" step="0.01" min="0" placeholder="จำนวนเป้าหมาย" aria-label="จำนวนเป้าหมาย">' +
+        '<button class="btn" type="button" data-action="save">บันทึก</button>' +
+        '<button class="btn secondary" type="button" data-action="clear">ล้างเป้า</button>' +
+        '<button class="btn secondary" type="button" data-action="cancel">ยกเลิก</button>' +
+        '<div class="goal-form-error" data-role="formerr"></div>' +
+      '</div>' +
+      '<div class="goal-body">' +
+        '<div class="goal-ring-wrap">' +
+          '<svg class="goal-ring" viewBox="0 0 140 140" role="img" aria-label="ความคืบหน้าสู่เป้าหมาย">' +
+            '<circle class="ring-track" cx="70" cy="70" r="' + RING_R + '"/>' +
+            '<circle class="ring-arc" data-role="arc" cx="70" cy="70" r="' + RING_R + '" transform="rotate(-90 70 70)" style="stroke-dasharray:' + RING_C.toFixed(3) + 'px; stroke-dashoffset:' + RING_C.toFixed(3) + 'px;"/>' +
+            dots +
+            '<g class="orbit" data-role="orbit" style="transform:rotate(0deg);">' +
+              '<g transform="translate(70,16) rotate(90)">' +
+                '<circle class="rocket-glow" r="11"/>' +
+                '<g class="rocket-bob">' +
+                  '<path class="rocket-flame" d="M-2.6 9.5 Q0 18 2.6 9.5 Z"/>' +
+                  '<path class="rocket-fin" d="M-3.6 2.5 L-7.2 9.5 L-3.4 8.2 Z"/>' +
+                  '<path class="rocket-fin" d="M3.6 2.5 L7.2 9.5 L3.4 8.2 Z"/>' +
+                  '<path class="rocket-body" d="M0 -11 C5.2 -6.5 5.2 3.5 3.6 9.5 L-3.6 9.5 C-5.2 3.5 -5.2 -6.5 0 -11 Z"/>' +
+                  '<circle class="rocket-window" cx="0" cy="-3" r="2"/>' +
+                '</g>' +
+              '</g>' +
+            '</g>' +
+            sparks +
+          '</svg>' +
+          '<div class="ring-center">' +
+            '<div class="ring-pct num" data-role="pct">—</div>' +
+            '<div class="ring-sub" data-role="pctsub">ยังไม่ตั้งเป้า</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="goal-stats">' +
+          '<div><div class="goal-stat-label">ทำได้แล้ว (สุทธิ)</div><div class="goal-stat-value num" data-role="profit">0.00</div></div>' +
+          '<div><div class="goal-stat-label">เป้าหมาย</div><div class="goal-stat-value num" data-role="target">—</div></div>' +
+          '<div><div class="goal-stat-label">เหลืออีก</div><div class="goal-stat-value num" data-role="remain">—</div></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="goal-need" data-role="need" style="display:none;"></div>' +
+      '<div class="goal-pace" data-role="pace" style="display:none;"></div>' +
+      '<div class="goal-msg" data-role="msg"></div>' +
+    '</div>';
+  }
+
+  var goalsGrid = document.getElementById("goalsGrid");
+  goalsGrid.innerHTML = goalCardHTML("monthly") + goalCardHTML("yearly");
+
+  function setGoalMode(card, mode){
+    card.setAttribute("data-mode", mode);
+    Array.prototype.forEach.call(card.querySelectorAll(".goal-seg button"), function(b){
+      b.classList.toggle("on", b.getAttribute("data-mode") === mode);
+    });
+    card.querySelector('input[type="number"]').placeholder = mode === "percent" ? "เช่น 10 (= 10% ของเงินทุน)" : "เช่น 300 (USDT)";
+  }
+
+  goalsGrid.addEventListener("click", function(e){
+    var btn = e.target.closest("[data-action]");
+    if(!btn) return;
+    var card = btn.closest(".goal-card");
+    var kind = card.getAttribute("data-kind");
+    var action = btn.getAttribute("data-action");
+    var form = card.querySelector(".goal-form");
+    var input = card.querySelector('input[type="number"]');
+    var err = card.querySelector('[data-role="formerr"]');
+
+    if(action === "edit"){
+      var cur = goalsOf()[kind];
+      setGoalMode(card, cur ? cur.mode : "usdt");
+      input.value = cur ? cur.value : "";
+      err.style.display = "none";
+      form.classList.toggle("open");
+      if(form.classList.contains("open")) input.focus();
+    } else if(action === "mode"){
+      setGoalMode(card, btn.getAttribute("data-mode"));
+    } else if(action === "cancel"){
+      form.classList.remove("open");
+    } else if(action === "clear"){
+      goalsOf()[kind] = null;
+      saveEntries();
+      form.classList.remove("open");
+      render();
+    } else if(action === "save"){
+      var val = Number(input.value);
+      if(input.value === "" || !isFinite(val) || val <= 0){
+        err.textContent = "กรุณาใส่ตัวเลขที่มากกว่า 0";
+        err.style.display = "block";
+        return;
+      }
+      goalsOf()[kind] = { mode: card.getAttribute("data-mode"), value: val };
+      saveEntries();
+      form.classList.remove("open");
+      render();
+    }
+  });
+  goalsGrid.addEventListener("keydown", function(e){
+    if(e.key === "Enter" && e.target.matches('input[type="number"]')){
+      var card = e.target.closest(".goal-card");
+      card.querySelector('[data-action="save"]').click();
+    }
+  });
+
+  function renderGoals(computed){
+    if(!goalsPainted){ goalsPainted = true; void goalsGrid.offsetWidth; } // flush initial style so the first fill animates
+    ["monthly", "yearly"].forEach(function(kind){
+      var card = goalsGrid.querySelector('.goal-card[data-kind="' + kind + '"]');
+      if(!card) return;
+      var r = computeGoal(kind, computed.perDay);
+      var q = function(role){ return card.querySelector('[data-role="' + role + '"]'); };
+      var usable = r.hasGoal && !r.unresolved;
+
+      q("title").textContent = kind === "monthly"
+        ? "เป้าหมายรายเดือน · " + monthLabelShort(viewedMonth)
+        : "เป้าหมายรายปี · " + viewedMonth.slice(0,4);
+      q("editbtn").textContent = r.hasGoal ? "✎ แก้ไข" : "+ ตั้งเป้า";
+
+      var progress = usable ? r.progress : 0;
+      card.classList.toggle("empty", !usable);
+      card.classList.toggle("achieved", !!(usable && r.achieved));
+      card.classList.toggle("zero", progress <= 0);
+      q("arc").style.strokeDashoffset = (RING_C * (1 - progress)).toFixed(3) + "px";
+      q("orbit").style.transform = "rotate(" + (progress * 360).toFixed(2) + "deg)";
+      Array.prototype.forEach.call(card.querySelectorAll(".ring-dot"), function(dot){
+        dot.classList.toggle("lit", progress >= parseFloat(dot.getAttribute("data-f")) - 0.0005);
+      });
+
+      var profitEl = q("profit");
+      profitEl.textContent = (r.profit > 0 ? "+" : "") + fmt(r.profit) + " USDT";
+      setClass(profitEl, trendClass(r.profit));
+
+      var pctEl = q("pct"), pctSub = q("pctsub"), targetEl = q("target"), remainEl = q("remain");
+      var needEl = q("need"), paceEl = q("pace");
+      needEl.style.display = "none";
+      paceEl.style.display = "none";
+
+      if(!usable){
+        pctEl.textContent = "—";
+        pctSub.textContent = r.unresolved ? "คำนวณไม่ได้" : "ยังไม่ตั้งเป้า";
+        targetEl.textContent = "—";
+        remainEl.textContent = "—";
+      } else {
+        pctEl.textContent = Math.max(0, Math.round(r.rawProgress * 100)) + "%";
+        pctSub.textContent = "ของเป้าหมาย";
+        targetEl.innerHTML = fmt(r.target) + ' <small>USDT' + (r.targetPct !== null ? ' · ' + fmt(r.targetPct) + '% ของทุน' : '') + '</small>';
+        if(r.achieved){
+          remainEl.innerHTML = 'บรรลุแล้ว ✓';
+        } else {
+          remainEl.innerHTML = fmt(r.remaining) + ' <small>USDT' + (r.remainingPct !== null ? ' · อีก ' + fmt(r.remainingPct) + '%' : '') + '</small>';
+        }
+
+        if(r.status === "current" && !r.achieved){
+          var lines = [];
+          if(r.perDay !== null){
+            lines.push("ต้องทำเฉลี่ย <b class='num'>" + fmt(r.perDay) + "</b> USDT/วัน · เหลืออีก " + r.daysLeft + " วัน");
+          } else {
+            lines.push("หมดช่วงนี้แล้ว — ปิดยอดให้ได้มากที่สุด");
+          }
+          if(kind === "yearly" && r.perMonth !== undefined){
+            lines.push("≈ <b class='num'>" + fmt(r.perMonth) + "</b> USDT/เดือน · เหลืออีก " + r.monthsLeft + " เดือน (รวมเดือนนี้)");
+          }
+          needEl.innerHTML = lines.join("<br>");
+          needEl.style.display = "block";
+        }
+        if(r.status === "current" && !r.achieved && r.expected !== undefined){
+          var diff = r.profit - r.expected;
+          paceEl.textContent = (diff >= 0 ? "✅ ก้าวนำแผน +" : "⏳ ตามหลังแผน ") + fmt(Math.abs(diff)) + " USDT (ถ้าเดินสม่ำเสมอ ตอนนี้ควรได้ ≈ " + fmt(r.expected) + ")";
+          setClass(paceEl, diff >= 0 ? "up" : "flat");
+          paceEl.style.display = "block";
+        }
+      }
+      q("msg").textContent = goalMessage(r);
+    });
+  }
+
+  // ================= RENDER =================
+  function render(){
+    var computed = computeAll();
+    var totals = computed.totals;
+    var months = monthlySummary(computed.perDay);
+    var active = getActive();
+
+    // ต้นทุนจริง = เงินทุนที่ฝากเข้าไปทั้งหมด (ไม่ลดลงจากการถอน) + ค่าธรรมเนียมสะสม
+    var trueCost = totals.trueCost;
+    // มูลค่าพอร์ตปัจจุบัน (rawEquity) เทียบกับต้นทุนจริง = สถานะของเงินที่ "ยังอยู่ในพอร์ตตอนนี้" เท่านั้น
+    // (ไม่รวมกำไรที่ถอนออกไปใช้แล้ว — ดูกำไรสะสมตลอดการเทรดในการ์ดด้านล่างแทน)
+    var accountDiff = totals.accountDiff;
+
+    // hero
+    var heroValue = document.getElementById("heroValue");
+    var heroStatus = document.getElementById("heroStatus");
+    var heroNote = document.getElementById("heroNote");
+    heroValue.textContent = fmt(totals.rawEquity);
+    if(computed.perDay.length === 0){
+      setClass(heroStatus, "flat");
+      heroStatus.textContent = "ยังไม่มีข้อมูล";
+      heroNote.textContent = "";
+    } else {
+      setClass(heroStatus, trendClass(accountDiff));
+      if(accountDiff > 0) heroStatus.textContent = "สูงกว่าต้นทุนจริง +" + fmt(accountDiff) + " USDT → มีกำไรคงอยู่ในพอร์ต";
+      else if(accountDiff < 0) heroStatus.textContent = "ต่ำกว่าต้นทุนจริง " + fmt(accountDiff) + " USDT → ขาดทุน";
+      else heroStatus.textContent = "เท่าทุนพอดี";
+      var noteParts = ["เทียบกับต้นทุนจริง " + fmt(trueCost) + " USDT (เงินทุน " + fmt(totals.totalCapital) + " + ค่าธรรมเนียม " + fmt(totals.cumFee) + ")"];
+      if(totals.cumWithdraw > 0){
+        noteParts.push("ถอนออกไปแล้วสะสม " + fmt(totals.cumWithdraw) + " USDT (ไม่กระทบต้นทุน เพราะถอนจากกำไร)");
+      }
+      heroNote.textContent = noteParts.join(" · ");
+    }
+
+    // tiles: true cost, month, lifetime profit (including anything already withdrawn)
+    var tileCost = document.getElementById("tileCost");
+    var tileCostSub = document.getElementById("tileCostSub");
+    var tileCumProfit = document.getElementById("tileCumProfit");
+    var tileCumPercent = document.getElementById("tileCumPercent");
+
+    tileCost.textContent = fmt(trueCost);
+    tileCostSub.textContent = computed.perDay.length
+      ? "เงินทุน " + fmt(totals.totalCapital) + " + ค่าธรรมเนียม " + fmt(totals.cumFee)
+      : "ยังไม่มีข้อมูล";
+
+    tileCumProfit.textContent = fmt(totals.cumNetProfit);
+    setClass(tileCumProfit, trendClass(totals.cumNetProfit));
+    if(trueCost > 0){
+      var cumPct = (totals.cumNetProfit / trueCost) * 100;
+      tileCumPercent.textContent = (cumPct >= 0 ? "+" : "") + fmt(cumPct) + "%";
+      setClass(tileCumPercent, trendClass(cumPct));
+    } else if(computed.perDay.length){
+      tileCumPercent.textContent = "ต้นทุนจริงเป็น 0 หรือติดลบ";
+      setClass(tileCumPercent, trendClass(totals.cumNetProfit));
+    } else {
+      tileCumPercent.textContent = "0.00%";
+      setClass(tileCumPercent, "flat");
+    }
+
+    // fee status hint in form
+    var feeStatusHint = document.getElementById("feeStatusHint");
+    feeStatusHint.textContent = isFeeEnabled(active)
+      ? "🤖 พอร์ตนี้เทรดด้วยบอท — คิดค่าธรรมเนียม 20% จากกำไรทุกวันที่เป็นบวก"
+      : "✋ พอร์ตนี้เทรดมือเอง — ไม่คิดค่าธรรมเนียม";
+
+    // month-specific tile
+    var monthData = months.find(function(m){ return m.month === viewedMonth; });
+    var tileMonthLabel = document.getElementById("tileMonthLabel");
+    var tileMonthProfit = document.getElementById("tileMonthProfit");
+    var tileMonthPercent = document.getElementById("tileMonthPercent");
+    tileMonthLabel.textContent = "กำไร/ขาดทุนเดือนนี้ (สุทธิ) · " + monthLabelShort(viewedMonth);
+    if(monthData){
+      tileMonthProfit.textContent = fmt(monthData.netProfit);
+      setClass(tileMonthProfit, trendClass(monthData.netProfit));
+      tileMonthPercent.textContent = (monthData.monthPercent >= 0 ? "+" : "") + fmt(monthData.monthPercent) + "%";
+      setClass(tileMonthPercent, trendClass(monthData.monthPercent));
+    } else {
+      tileMonthProfit.textContent = "0.00"; setClass(tileMonthProfit,"flat");
+      tileMonthPercent.textContent = "0.00%"; setClass(tileMonthPercent,"flat");
+    }
+
+    renderCalendar(computed.perDay);
+    renderGoals(computed);
+    renderDayList(computed.perDay);
+    renderChart(months);
+  }
+
+  // ================= CALENDAR =================
+  function renderCalendar(perDay){
+    var byDate = {};
+    perDay.forEach(function(d){ byDate[d.date] = d; });
+
+    document.getElementById("calMonthLabel").textContent = monthLabelLong(viewedMonth);
+    var monthData = monthlySummary(perDay).find(function(m){ return m.month === viewedMonth; });
+    var summary = document.getElementById("calSummary");
+    if(monthData){
+      summary.textContent = "รวมเดือนนี้: " + (monthData.netProfit >= 0 ? "+" : "") + fmt(monthData.netProfit) + " USDT สุทธิ (ค่าธรรมเนียม " + fmt(monthData.fee) + ")";
+    } else {
+      summary.textContent = "ยังไม่มีข้อมูลในเดือนนี้";
+    }
+
+    var grid = document.getElementById("calGrid");
+    grid.innerHTML = "";
+    var dows = ["อา","จ","อ","พ","พฤ","ศ","ส"];
+    dows.forEach(function(d){
+      var el = document.createElement("div");
+      el.className = "cal-dow";
+      el.textContent = d;
+      grid.appendChild(el);
+    });
+
+    var parts = viewedMonth.split("-");
+    var year = parseInt(parts[0],10), month = parseInt(parts[1],10); // month 1-12
+    var firstDow = new Date(year, month-1, 1).getDay();
+    var daysInMonth = new Date(year, month, 0).getDate();
+    var todayStr = todayISO();
+
+    for(var i=0;i<firstDow;i++){
+      var blank = document.createElement("div");
+      blank.className = "cal-cell empty";
+      grid.appendChild(blank);
+    }
+    for(var day=1; day<=daysInMonth; day++){
+      var dateStr = year + "-" + pad2(month) + "-" + pad2(day);
+      var d = byDate[dateStr];
+      var cell = document.createElement("div");
+      cell.className = "cal-cell" + (dateStr === todayStr ? " today" : "");
+      if(d){ cell.className += d.profit > 0 ? " has-profit" : (d.profit < 0 ? " has-loss" : ""); }
+      cell.setAttribute("data-date", dateStr);
+      var dayNum = document.createElement("div");
+      dayNum.className = "cal-daynum";
+      dayNum.textContent = day;
+      cell.appendChild(dayNum);
+      if(d){
+        var plEl = document.createElement("div");
+        plEl.className = "cal-pl num";
+        plEl.textContent = (d.profit >= 0 ? "+" : "") + fmt(d.profit, d.profit % 1 === 0 ? 0 : 2);
+        cell.appendChild(plEl);
+      }
+      grid.appendChild(cell);
+    }
+
+    grid.onclick = function(e){
+      var cell = e.target.closest(".cal-cell");
+      if(!cell || cell.classList.contains("empty")) return;
+      var dateStr = cell.getAttribute("data-date");
+      openDateInForm(dateStr);
+    };
+  }
+
+  function shiftMonth(delta){
+    var parts = viewedMonth.split("-");
+    var year = parseInt(parts[0],10), month = parseInt(parts[1],10);
+    month += delta;
+    if(month < 1){ month = 12; year--; }
+    if(month > 12){ month = 1; year++; }
+    viewedMonth = year + "-" + pad2(month);
+    render();
+  }
+  document.getElementById("calPrev").addEventListener("click", function(){ shiftMonth(-1); });
+  document.getElementById("calNext").addEventListener("click", function(){ shiftMonth(1); });
+
+  // ================= DAY LIST (table for viewed month) =================
+  function renderDayList(perDay){
+    var tbody = document.getElementById("tableBody");
+    tbody.innerHTML = "";
+    var monthDays = perDay.filter(function(d){ return d.date.slice(0,7) === viewedMonth; });
+    if(monthDays.length === 0){
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="7">ยังไม่มีรายการในเดือนนี้</td></tr>';
+      return;
+    }
+    monthDays.slice().reverse().forEach(function(d){
+      var tr = document.createElement("tr");
+      tr.innerHTML =
+        '<td>'+ d.date +'</td>' +
+        '<td class="num '+ trendClass(d.profit) +'">'+ (d.profit>=0?"+":"") + fmt(d.profit) +'</td>' +
+        '<td class="num flat">'+ fmt(d.fee) +'</td>' +
+        '<td class="num '+ trendClass(d.netProfit) +'">'+ (d.netProfit>=0?"+":"") + fmt(d.netProfit) +'</td>' +
+        '<td class="num '+ (d.capitalAdded>0?"up":"flat") +'">'+ (d.capitalAdded>0?"+":"") + fmt(d.capitalAdded) +'</td>' +
+        '<td class="num flat">'+ fmt(d.withdraw) +'</td>' +
+        '<td><div class="row-actions">'+
+          '<button class="icon-btn edit" data-edit="'+ d.date +'" title="แก้ไข" aria-label="แก้ไข">✎</button>'+
+          '<button class="icon-btn danger" data-del="'+ d.date +'" title="ลบ" aria-label="ลบ">🗑</button>'+
+        '</div></td>';
+      tbody.appendChild(tr);
+    });
+  }
+
+  document.getElementById("tableBody").addEventListener("click", function(e){
+    var editDate = e.target.getAttribute("data-edit");
+    var delDate = e.target.getAttribute("data-del");
+    if(editDate){ openDateInForm(editDate); }
+    if(delDate){
+      var btn = e.target;
+      if(btn.dataset.confirming === "1"){
+        entries = entries.filter(function(r){ return r.date !== delDate; });
+        saveEntries();
+        render();
+      } else {
+        btn.dataset.confirming = "1";
+        btn.textContent = "✓";
+        btn.title = "คลิกอีกครั้งเพื่อยืนยันการลบ";
+        setTimeout(function(){
+          if(btn && btn.isConnected){ btn.dataset.confirming = "0"; btn.textContent = "🗑"; btn.title = "ลบ"; }
+        }, 2500);
+      }
+    }
+  });
+
+  // ================= CHART =================
+  function getCSSVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+  function renderChart(months){
+    var canvas = document.getElementById("trendChart");
+    var emptyMsg = document.getElementById("chartEmpty");
+    if(months.length === 0){
+      canvas.style.display = "none"; emptyMsg.style.display = "block";
+      if(chart){ chart.destroy(); chart = null; }
+      return;
+    }
+    canvas.style.display = "block"; emptyMsg.style.display = "none";
+
+    var labels = months.map(function(m){ return monthLabelShort(m.month); });
+    var netProfits = months.map(function(m){ return Number(m.netProfit.toFixed(2)); });
+    var values = months.map(function(m){ return Number(m.rawEquityToDate.toFixed(2)); });
+
+    var profitColor = getCSSVar('--profit'), lossColor = getCSSVar('--loss');
+    var accentColor = getCSSVar('--accent'), textDim = getCSSVar('--text-dim'), borderColor = getCSSVar('--border');
+    var barColors = netProfits.map(function(v){ return v < 0 ? lossColor : profitColor; });
+
+    if(chart){ chart.destroy(); }
+    chart = new Chart(canvas.getContext("2d"), {
+      data: {
+        labels: labels,
+        datasets: [
+          { type:"bar", label:"กำไรสุทธิ/เดือน", data:netProfits, backgroundColor:barColors, borderRadius:4, yAxisID:"y", order:2 },
+          { type:"line", label:"มูลค่าพอร์ต ณ สิ้นเดือน", data:values, borderColor:accentColor, backgroundColor:accentColor,
+            pointRadius:3, pointBackgroundColor:accentColor, tension:0.25, yAxisID:"y1", order:1 }
+        ]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false, interaction:{ mode:"index", intersect:false },
+        plugins:{ legend:{ labels:{ color:textDim, font:{ family:"'Noto Sans Thai'", size:11 } } } },
+        scales:{
+          x:{ ticks:{ color:textDim, font:{ family:"'IBM Plex Mono'", size:11 } }, grid:{ color:borderColor } },
+          y:{ position:"left", ticks:{ color:textDim, font:{ family:"'IBM Plex Mono'", size:10 } }, grid:{ color:borderColor } },
+          y1:{ position:"right", ticks:{ color:textDim, font:{ family:"'IBM Plex Mono'", size:10 } }, grid:{ display:false } }
+        }
+      }
+    });
+  }
+
+  // ================= FORM (single day upsert) =================
+  var inDate = document.getElementById("inDate");
+  var inProfit = document.getElementById("inProfit");
+  var inCapital = document.getElementById("inCapital");
+  var inWithdraw = document.getElementById("inWithdraw");
+  var saveBtn = document.getElementById("saveBtn");
+  var deleteEntryBtn = document.getElementById("deleteEntryBtn");
+  var formTitle = document.getElementById("formTitle");
+  var formError = document.getElementById("formError");
+
+  function clearFormFields(dateStr){
+    inDate.value = dateStr || todayISO();
+    inProfit.value = "";
+    inCapital.value = "";
+    inWithdraw.value = "";
+    formTitle.textContent = "เพิ่มข้อมูลวันที่ " + (dateStr || todayISO());
+    deleteEntryBtn.style.display = "none";
+    formError.style.display = "none";
+  }
+
+  function openDateInForm(dateStr){
+    var existing = entries.find(function(r){ return r.date === dateStr; });
+    inDate.value = dateStr;
+    if(existing){
+      inProfit.value = existing.profit;
+      inCapital.value = existing.capitalAdded || "";
+      inWithdraw.value = existing.withdraw || "";
+      formTitle.textContent = "แก้ไขข้อมูลวันที่ " + dateStr;
+      deleteEntryBtn.style.display = "inline-block";
+    } else {
+      inProfit.value = "";
+      inCapital.value = "";
+      inWithdraw.value = "";
+      formTitle.textContent = "เพิ่มข้อมูลวันที่ " + dateStr;
+      deleteEntryBtn.style.display = "none";
+    }
+    formError.style.display = "none";
+    // switch viewed month to match, in case user clicked from the day list of a different month
+    var m = dateStr.slice(0,7);
+    if(m !== viewedMonth){ viewedMonth = m; render(); }
+    document.getElementById("formTitle").scrollIntoView({ behavior:"smooth", block:"center" });
+  }
+
+  function showError(msg){ formError.textContent = msg; formError.style.display = "block"; }
+
+  saveBtn.addEventListener("click", function(){
+    var date = inDate.value;
+    var profit = inProfit.value;
+    var capitalAdded = inCapital.value === "" ? 0 : inCapital.value;
+    var withdraw = inWithdraw.value === "" ? 0 : inWithdraw.value;
+
+    if(!date){ showError("กรุณาเลือกวันที่"); return; }
+    if(profit === "" || isNaN(Number(profit))){ showError("กรุณากรอกกำไร/ขาดทุนเป็นตัวเลข"); return; }
+    if(isNaN(Number(capitalAdded)) || Number(capitalAdded) < 0){ showError("เงินทุนที่เพิ่มต้องเป็นตัวเลขและไม่ติดลบ"); return; }
+    if(isNaN(Number(withdraw)) || Number(withdraw) < 0){ showError("ถอนเงินต้องเป็นตัวเลขและไม่ติดลบ"); return; }
+
+    var existing = entries.find(function(r){ return r.date === date; });
+    if(existing){
+      existing.profit = Number(profit); existing.capitalAdded = Number(capitalAdded); existing.withdraw = Number(withdraw);
+    } else {
+      entries.push({ id: genId(), date: date, profit: Number(profit), capitalAdded: Number(capitalAdded), withdraw: Number(withdraw) });
+    }
+    saveEntries();
+    var m = date.slice(0,7);
+    if(m !== viewedMonth) viewedMonth = m;
+    clearFormFields(date);
+    render();
+  });
+
+  deleteEntryBtn.addEventListener("click", function(){
+    var date = inDate.value;
+    entries = entries.filter(function(r){ return r.date !== date; });
+    saveEntries();
+    clearFormFields(date);
+    render();
+  });
+
+  // ================= BACKUP: export / import =================
+  function triggerBrowserDownload(filename, content){
+    var blob = new Blob([content], { type:"application/json" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  }
+
+  var exportBtn = document.getElementById("exportBtn");
+  var backupMsg = document.getElementById("backupMsg");
+  var backupMsgDefault = backupMsg.textContent;
+  function showBackupMsg(msg){ backupMsg.textContent = msg; setTimeout(function(){ backupMsg.textContent = backupMsgDefault; }, 3000); }
+
+  exportBtn.addEventListener("click", function(){
+    if(entries.length === 0){ showBackupMsg("ยังไม่มีข้อมูลให้ดาวน์โหลด"); return; }
+    var payload = JSON.stringify({ type:"trading-dashboard-backup", version:4, portfolio: getActive().name, goals: goalsOf(), entries: entries }, null, 2);
+    var todayStr = new Date().toISOString().slice(0,10);
+    var safeName = getActive().name.replace(/[^a-zA-Z0-9ก-๙_-]+/g, "-");
+    triggerBrowserDownload("trading-dashboard-" + safeName + "-" + todayStr + ".json", payload);
+    showBackupMsg("บันทึกไฟล์แล้ว");
+  });
+
+  var importBtn = document.getElementById("importBtn");
+  var importFile = document.getElementById("importFile");
+  var importChoice = document.getElementById("importChoice");
+  var importCount = document.getElementById("importCount");
+  var pendingImport = null;
+  var pendingGoals = null;
+
+  function cleanGoal(g){
+    if(!g || typeof g !== "object") return null;
+    var v = Number(g.value);
+    if(!(v > 0) || (g.mode !== "usdt" && g.mode !== "percent")) return null;
+    return { mode: g.mode, value: v };
+  }
+
+  importBtn.addEventListener("click", function(){ importFile.click(); });
+  importFile.addEventListener("change", function(){
+    var file = importFile.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      try{
+        var parsed = JSON.parse(reader.result);
+        var incoming = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.entries) ? parsed.entries : null);
+        if(!incoming) throw new Error("bad format");
+        incoming = incoming.filter(function(r){ return r && r.date && !isNaN(Number(r.profit)); })
+          .map(function(r){
+            return { id: r.id || genId(), date: r.date, profit: Number(r.profit),
+              capitalAdded: Number(r.capitalAdded) || 0, withdraw: Number(r.withdraw) || 0 };
+          });
+        if(incoming.length === 0) throw new Error("empty");
+        pendingImport = incoming;
+        pendingGoals = (!Array.isArray(parsed) && parsed.goals) ? { monthly: cleanGoal(parsed.goals.monthly), yearly: cleanGoal(parsed.goals.yearly) } : null;
+        importCount.textContent = incoming.length;
+        importChoice.style.display = "block";
+        importChoice.scrollIntoView({ behavior:"smooth", block:"center" });
+      } catch(e){
+        showBackupMsg("ไฟล์นี้ไม่ใช่ไฟล์สำรองที่ถูกต้อง");
+      }
+      importFile.value = "";
+    };
+    reader.readAsText(file);
+  });
+
+  document.getElementById("importReplaceBtn").addEventListener("click", function(){
+    if(!pendingImport) return;
+    entries = pendingImport;
+    if(pendingGoals) getActive().goals = pendingGoals;
+    saveEntries();
+    finishImport();
+  });
+  document.getElementById("importMergeBtn").addEventListener("click", function(){
+    if(!pendingImport) return;
+    var existingDates = {};
+    entries.forEach(function(r){ existingDates[r.date] = true; });
+    pendingImport.forEach(function(r){
+      if(!existingDates[r.date]){ entries.push(r); existingDates[r.date] = true; }
+    });
+    if(pendingGoals){
+      var g = goalsOf();
+      if(!g.monthly) g.monthly = pendingGoals.monthly;
+      if(!g.yearly) g.yearly = pendingGoals.yearly;
+    }
+    saveEntries();
+    finishImport();
+  });
+  document.getElementById("importCancelBtn").addEventListener("click", function(){
+    pendingImport = null; pendingGoals = null; importChoice.style.display = "none";
+  });
+  function finishImport(){
+    pendingImport = null; pendingGoals = null; importChoice.style.display = "none";
+    clearFormFields();
+    render();
+  }
+
+  // ================= PORTFOLIOS =================
+  var portfolioBar = document.getElementById("portfolioBar");
+  var portfolioAdd = document.getElementById("portfolioAdd");
+  var portfolioManage = document.getElementById("portfolioManage");
+  var newPortfolioName = document.getElementById("newPortfolioName");
+  var newPortfolioFee = document.getElementById("newPortfolioFee");
+  var renamePortfolioInput = document.getElementById("renamePortfolioInput");
+  var renamePortfolioFee = document.getElementById("renamePortfolioFee");
+
+  function hideAddForm(){ portfolioAdd.style.display = "none"; newPortfolioName.value = ""; newPortfolioFee.checked = true; }
+  function hideManageForm(){ portfolioManage.style.display = "none"; }
+
+  function renderPortfolioBar(){
+    portfolioBar.innerHTML = "";
+    state.portfolios.forEach(function(p){
+      var btn = document.createElement("button");
+      btn.className = "pill" + (p.id === state.activeId ? " active" : "");
+      btn.textContent = (isFeeEnabled(p) ? "🤖 " : "✋ ") + p.name;
+      btn.title = isFeeEnabled(p) ? "เทรดด้วยบอท — คิดค่าธรรมเนียม 20%" : "เทรดมือเอง — ไม่คิดค่าธรรมเนียม";
+      btn.setAttribute("data-portfolio-id", p.id);
+      portfolioBar.appendChild(btn);
+    });
+    var addBtn = document.createElement("button");
+    addBtn.className = "pill pill-ghost"; addBtn.id = "pillAddBtn"; addBtn.title = "เพิ่มพอร์ตใหม่"; addBtn.textContent = "+ เพิ่มพอร์ต";
+    portfolioBar.appendChild(addBtn);
+    var manageBtn = document.createElement("button");
+    manageBtn.className = "pill pill-ghost"; manageBtn.id = "pillManageBtn"; manageBtn.title = "จัดการพอร์ตที่เลือกอยู่"; manageBtn.textContent = "⚙ จัดการพอร์ต";
+    portfolioBar.appendChild(manageBtn);
+  }
+
+  function resetViewToLatestOrCurrentMonth(){
+    var sorted = entries.slice().sort(function(a,b){ return a.date.localeCompare(b.date); });
+    viewedMonth = sorted.length ? sorted[sorted.length-1].date.slice(0,7) : todayISO().slice(0,7);
+  }
+
+  function switchPortfolio(id){
+    if(id === state.activeId) return;
+    state.activeId = id;
+    entries = getActive().entries;
+    safeSet(STORAGE_KEY, JSON.stringify(state));
+    hideAddForm(); hideManageForm();
+    resetViewToLatestOrCurrentMonth();
+    clearFormFields();
+    renderPortfolioBar();
+    render();
+  }
+
+  function createPortfolio(name, feeEnabled){
+    var p = { id: genId(), name: name, feeEnabled: feeEnabled !== false, goals: { monthly:null, yearly:null }, entries: [] };
+    state.portfolios.push(p);
+    state.activeId = p.id;
+    entries = p.entries;
+    safeSet(STORAGE_KEY, JSON.stringify(state));
+    hideAddForm();
+    resetViewToLatestOrCurrentMonth();
+    clearFormFields();
+    renderPortfolioBar();
+    render();
+  }
+
+  portfolioBar.addEventListener("click", function(e){
+    var pid = e.target.getAttribute("data-portfolio-id");
+    if(pid){ switchPortfolio(pid); return; }
+    if(e.target.id === "pillAddBtn"){
+      hideManageForm();
+      portfolioAdd.style.display = portfolioAdd.style.display === "none" ? "flex" : "none";
+      if(portfolioAdd.style.display === "flex") newPortfolioName.focus();
+      return;
+    }
+    if(e.target.id === "pillManageBtn"){
+      hideAddForm();
+      renamePortfolioInput.value = getActive().name;
+      renamePortfolioFee.checked = isFeeEnabled(getActive());
+      portfolioManage.style.display = portfolioManage.style.display === "none" ? "flex" : "none";
+      return;
+    }
+  });
+
+  document.getElementById("portfolioAddConfirm").addEventListener("click", function(){
+    var name = newPortfolioName.value.trim();
+    if(!name){ newPortfolioName.focus(); return; }
+    createPortfolio(name, newPortfolioFee.checked);
+  });
+  document.getElementById("portfolioAddCancel").addEventListener("click", hideAddForm);
+
+  document.getElementById("portfolioRenameBtn").addEventListener("click", function(){
+    var name = renamePortfolioInput.value.trim();
+    if(!name) return;
+    getActive().name = name;
+    getActive().feeEnabled = renamePortfolioFee.checked;
+    safeSet(STORAGE_KEY, JSON.stringify(state));
+    renderPortfolioBar();
+    render();
+  });
+  document.getElementById("portfolioManageCancel").addEventListener("click", hideManageForm);
+
+  var deletePortfolioBtn = document.getElementById("portfolioDeleteBtn");
+  deletePortfolioBtn.addEventListener("click", function(){
+    if(state.portfolios.length <= 1){ showBackupMsg("ต้องมีอย่างน้อย 1 พอร์ตเสมอ"); return; }
+    if(deletePortfolioBtn.dataset.confirming === "1"){
+      var idx = state.portfolios.findIndex(function(p){ return p.id === state.activeId; });
+      state.portfolios.splice(idx, 1);
+      state.activeId = state.portfolios[0].id;
+      entries = getActive().entries;
+      safeSet(STORAGE_KEY, JSON.stringify(state));
+      hideManageForm();
+      resetViewToLatestOrCurrentMonth();
+      clearFormFields();
+      renderPortfolioBar();
+      render();
+    } else {
+      deletePortfolioBtn.dataset.confirming = "1";
+      deletePortfolioBtn.title = "คลิกอีกครั้งเพื่อยืนยันการลบพอร์ตนี้";
+      deletePortfolioBtn.style.color = "var(--loss)";
+      setTimeout(function(){
+        deletePortfolioBtn.dataset.confirming = "0";
+        deletePortfolioBtn.title = "ลบพอร์ตนี้";
+        deletePortfolioBtn.style.color = "";
+      }, 2500);
+    }
+  });
+
+  // ================= THEME =================
+  var themeBtn = document.getElementById("themeToggle");
+  function applyStoredTheme(){
+    var stored = safeGet(THEME_KEY);
+    if(stored === "light" || stored === "dark") document.documentElement.setAttribute("data-theme", stored);
+  }
+  themeBtn.addEventListener("click", function(){
+    var current = document.documentElement.getAttribute("data-theme");
+    var prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    var effectiveDark = current === "dark" || (!current && prefersDark);
+    var next = effectiveDark ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    safeSet(THEME_KEY, next);
+    render();
+  });
+
+  // ================= TABS (ภาพรวม / บันทึกรายวัน) =================
+  var TAB_KEY = "trading_dashboard_tab";
+  var tabsEl = document.getElementById("tabs");
+  var currentTab = null;
+
+  function animateGoalsIn(){
+    // replay the ring/rocket fill so it is visible when the overview is revealed again
+    var saved = [];
+    Array.prototype.forEach.call(goalsGrid.querySelectorAll(".goal-card"), function(card){
+      var arc = card.querySelector('[data-role="arc"]'), orb = card.querySelector('[data-role="orbit"]');
+      saved.push([arc, arc.style.strokeDashoffset, orb, orb.style.transform]);
+      arc.style.transition = "none"; orb.style.transition = "none";
+      arc.style.strokeDashoffset = RING_C.toFixed(3) + "px"; orb.style.transform = "rotate(0deg)";
+    });
+    void goalsGrid.offsetWidth;
+    saved.forEach(function(s){
+      s[0].style.transition = ""; s[2].style.transition = "";
+      s[0].style.strokeDashoffset = s[1]; s[2].style.transform = s[3];
+    });
+  }
+
+  function showTab(name, opts){
+    opts = opts || {};
+    if(name !== "daily") name = "overview";
+    var prev = currentTab;
+    currentTab = name;
+    ["overview", "daily"].forEach(function(n){
+      document.getElementById("view-" + n).hidden = (n !== name);
+      var b = tabsEl.querySelector('[data-tab="' + n + '"]');
+      b.classList.toggle("on", n === name);
+      b.setAttribute("aria-selected", n === name ? "true" : "false");
+    });
+    safeSet(TAB_KEY, name);
+    try{ if(window.history && history.replaceState) history.replaceState(null, "", "#" + name); }catch(e){ /* file:// in some browsers */ }
+    if(name === "overview"){
+      if(chart) requestAnimationFrame(function(){ chart.resize(); });
+      if(prev && prev !== "overview" && !opts.noAnimate) animateGoalsIn();
+    }
+    if(!opts.noScroll){
+      var top = document.getElementById("tabsAnchor").getBoundingClientRect().top + window.pageYOffset;
+      if(window.pageYOffset > top) window.scrollTo(0, top);
+    }
+  }
+
+  tabsEl.addEventListener("click", function(e){
+    var b = e.target.closest("[data-tab]");
+    if(b) showTab(b.getAttribute("data-tab"));
+  });
+  tabsEl.addEventListener("keydown", function(e){
+    if(e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    var next = currentTab === "overview" ? "daily" : "overview";
+    showTab(next, { noScroll:true });
+    document.getElementById("tab-" + next).focus();
+  });
+  window.addEventListener("hashchange", function(){
+    var n = location.hash.replace("#", "");
+    if((n === "overview" || n === "daily") && n !== currentTab) showTab(n, { noScroll:true });
+  });
+
+  document.getElementById("quickAddBtn").addEventListener("click", function(){
+    showTab("daily");
+    openDateInForm(todayISO());
+  });
+  document.getElementById("calToday").addEventListener("click", function(){
+    viewedMonth = todayISO().slice(0, 7);
+    render();
+  });
+
+  // ================= INIT =================
+  applyStoredTheme();
+  state = loadState();
+  entries = getActive().entries;
+  resetViewToLatestOrCurrentMonth();
+  renderPortfolioBar();
+  clearFormFields();
+  render();
+  var startTab = (location.hash || "").replace("#", "");
+  if(startTab !== "overview" && startTab !== "daily") startTab = safeGet(TAB_KEY);
+  showTab(startTab === "daily" ? "daily" : "overview", { noScroll:true, noAnimate:true });
+})();
+</script>
+</body>
+</html>
